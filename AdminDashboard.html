@@ -1,0 +1,725 @@
+<!DOCTYPE html>
+<html lang="en" ng-app="myApp">
+
+
+<head>
+<meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
+<meta name="description" content="">
+<meta name="author" content="">
+<link rel="icon" href="http://getbootstrap.com/favicon.ico">
+
+<title>MTaaS</title>
+
+<script src="public/stylesheets/js/angular.min.js"></script>
+<script src="public/bower_components/Chart.js/Chart.js"></script>
+
+<script type="text/javascript" src="/vis/dist/vis.js"></script>
+
+<!-- Bootstrap core CSS -->
+<link rel="stylesheet" href="public/stylesheets/css/bootstrap.min.css"/>
+<link href="/vis/dist/vis.css" rel="stylesheet" type="text/css" />
+
+<!-- Custom styles for this template -->
+<link href="public/stylesheets/css/dashboard.css" rel="stylesheet"/>
+
+<!-- Just for debugging purposes. Don't actually copy these 2 lines! -->
+<!--[if lt IE 9]>
+<script src="../../assets/js/ie8-responsive-file-warning.js"></script><![endif]-->
+<script src="public/stylesheets/js/ie-emulation-modes-warning.js"></script>
+
+<!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
+<!--[if lt IE 9]>
+<script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
+<script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+<![endif]-->
+
+<link rel="stylesheet" href="public/stylesheets/css/ng-table.min.css"/>
+<script src="public/stylesheets/js/ng-table.min.js"></script>
+
+<style type="text/css">
+.red{
+	background-color: red;
+}
+.green{
+	background-color: green;
+}
+a{
+	color: blue;
+}
+
+
+td, th {
+	  text-align: center;
+}
+</style>
+
+</head>
+
+
+<body  ng-controller="StudentCtrl" ng-init="tab = 0">
+
+<nav class="navbar navbar-inverse navbar-fixed-top">
+  <div class="container-fluid">
+    <div class="navbar-header">
+      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+        <span class="sr-only">Toggle navigation</span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+      <a class="navbar-brand" href="#">Welcome!</a>
+    </div>
+    <div id="navbar" class="navbar-collapse collapse" >
+	    <ul class="nav navbar-nav navbar-right">
+		   <li ><a href ng-click="tab = 0;viewTimeTable()">Reserve</a>
+		   </li>
+		   <li ><a href ng-click="tab = 1;viewBookings()">View Or Cancel Bookings</a>
+		   </li>
+		   <li><a href ng-click="tab = 2;setting()">Settings</a>
+		   </li>
+	     <li><a href ng-click="logout()"><span class='glyphicon glyphicon-log-out'></span> Log Out</a></li> 
+	     </ul>
+      <!--<form class="navbar-form navbar-right">
+          <input type="text" class="form-control" placeholder="Search...">
+        </form>-->
+    </div>
+  </div>
+</nav>
+
+<div class="container-fluid">
+  <div class="row">
+
+<!--  <div class="col-sm-3 col-md-2 sidebar">
+      <ul class="nav nav-sidebar" ng-init="tab = 0">
+        <li ng-class="{ active:tab === 0 }"><a href ng-click="tab = 0;viewTimeTable()">Reserve</a>
+        </li>
+        <li ng-class="{ active:tab === 1 }"><a href ng-click="tab=1;viewBookings()">View Or Cancel Bookings</a>
+        </li>
+        <li ng-class="{ active:tab === 2 }"><a href ng-click="tab = 2;setting()">Settings</a>
+        </li>
+      </ul>
+    </div>-->
+
+
+
+    <div ng-show="tab === 0"  class="main">
+    	<div class="col-sm-3">
+              <label class="control-label" for="date">Date</label>
+              <input type="date"  ng-change="changDate()" min="{{today}}" max ="{{max_day}}"  class="form-control " ng-model="s_date" placeholder="mm:dd:yy"}>
+
+               <h4 class="control-label " >{{date_show}}</h4> 
+        </div>
+
+    
+        <div class="panel panel-cascade panel-invoice">
+        <div class="panel-body">
+        <!--  <span class="pull-right" style="margin: 10px">
+              <a href="#" class=" btn btn-success btn-print text-white hidden-print"><i class="fa fa-print"></i> Print</a>
+          </span>-->
+
+            <div class="row">
+
+                <div class="col-md-12">
+
+                	<span class="label label-success">Available</span>
+        			<span class="label label-danger">Not Available</span>
+
+                    <table class="table table-bordered">
+
+                        <thead>
+                            <tr class="invoice-total" bgcolor="#f1f1f1">
+                                <td><strong>Room</strong></td>
+                                <td colspan="10"><strong>Time Slots</strong></td>
+
+                            </tr>
+                        </thead>
+
+
+                        <tbody>
+
+                        	<tr ng-repeat="room in rooms track by $index" >
+                        		<th>
+	                               {{room}}
+	                           </th>
+	                           <td ng-repeat="slot in slot_names track by $index"  ng-class='{red : check(room,$index), green: !check(room,$index)}' >
+
+	                           	 <p><a ng-if="!check(room,$index)" ng-click="reserve(room,$index)">{{slot}}</a></p>
+
+	                           	 <span ng-if="check(room,$index)">{{slot}}</span>
+
+	                               
+	                           </td>
+	                        </tr>
+                        	<!--<tr ng-repeat="room in roomTable.timesheet" >
+                        		<th>
+	                               {{room.roomNumber}}
+	                           </th>
+
+				                <td ng-repeat="slot in room.timeSlots" >
+				                	 <a ng-if="slot.studentId==''" ng-click="reserve(roomTable.date, slot.timeSlot)"> {{slot_names[slot.timeSlot]}} </a>
+                               		<span ng-if="slot.studentId!=''">{{slot_names[slot.timeSlot]}} </span>
+				                 
+				                </td>
+				                
+				        
+				            </tr>-->
+
+	                       
+                       </tbody>
+                    </table>
+                </div>
+            </div>
+           </div>
+         </div>
+    </div>
+
+
+ <!-- <div ng-show="tab === 1"  class="main">
+  	<div class="profile-tabs">
+	
+		    <ul id="myTab" class="nav nav-tabs">
+		    	<li ng-class="{ active: Tab === 'bookings' }" ng-click="getBills(mode,Tab)"><a href data-toggle="tab" ng-click="Tab = 'bookings'">Bookings</a></li>
+		    	<li ng-class="{ active: Tab === 'settings' }" ng-click="getPayOrDepHis(Tab)"><a href data-toggle="tab" ng-click="Tab = 'settings'">Settings</a></li>
+  
+		    </ul>
+		    <div id="myTabContent" class="tab-content">
+		    	<div ng-class="{ active: Tab === 'bookings'}" class="tab-pane fade in" id="bookings" ng-show="Tab === 'bookings'">
+
+		    		<div class="panel panel-cascade panel-invoice">
+				       <div class="panel-body">
+				        <h3 class="page-header">All bookings</h3>                
+				        <div>
+				            <table>
+
+				               <thead>
+				                  <tr class="invoice-total" bgcolor="#f1f1f1">
+				                                           
+				                                            <td><strong>Date</strong></td>
+				                                            <td><strong>Room</strong></td>
+				                                            <td><strong>Time</strong></td>
+				                                            <td><strong>BookerID</strong></td>
+				                  </tr>
+				                </thead>       
+
+				                   
+				                      <tr ng-repeat="book in Records_data">
+				                       
+				                        <td colspan="4">
+				                          <table>
+				                            <tr ng-repeat="item in book.timesheet">
+				                               
+				                                <td>
+				                                    <table class="table">
+
+
+				                                       <tr ng-repeat="slot in item.timeSlots">
+				                                           <td>{{book.date}}</td>
+				                                           <td>{{item.roomNumber}}</td>
+				                                           <td>{{slot_names[slot.timeSlot]}}</td>
+				                                           <td>{{slot.studentId}}</td>
+				                                           <td><a  ng-click="cancelBooking(slot.studentId,book.date,item.roomNumber,slot.timeSlot)"><span>Cancel</span></a>  
+				                                           </td>       
+				                                        </tr>                                     
+				                                    </table>
+				                                </td>                                                          
+				                            </tr>
+				                          </table>
+				                        </td>                 
+				                      </tr>
+				                  
+				            </table>
+				        </div>
+				      </div>
+				    </div>
+				</div>
+
+				<div ng-class="{ active: Tab === 'settings'}" class="tab-pane fade in" id="settings" ng-show="Tab === 'settings'">
+
+					<div class="panel panel-cascade panel-invoice">
+				      <div class="panel-body">
+				        <h3 class="page-header">Set the maxium number of booking per day!</h3>  
+				         <form id="loginform" class="form-horizontal" role="form">
+
+				          <div style="margin-bottom: 25px" class="input-group">
+
+				            <label class="control-label" >Enter Maxium number:</label>
+
+				            <input type="number" ng-model="maxNum" min="0" class="form-control" >
+
+				          </div>   
+				          <div tyle="margin-bottom: 25px" class="input-group">
+				              <input type="button" value="Submit" class="btn btn-sm btn-primary" ng-click="setMaxNum(maxNum)">
+				           
+				          </div> 
+				        </form>          
+				       
+				      </div>
+				    </div> 
+
+				</div>
+
+			</div>
+    </div> 
+  </div>-->
+   		
+			            	
+ 
+
+
+ <div ng-show="tab === 1"  class="main">
+     <div class="row">
+
+     <div class="panel panel-cascade panel-invoice">
+       <div class="panel-body">
+     
+          <div>
+            <h3 class="page-header">All bookings</h3>                
+      
+            <table  class="col-md-10" align="center">
+
+               <thead>
+                  <tr class="invoice-total" bgcolor="#f1f1f1">
+                                           
+                                            <td><strong>Date</strong></td>
+                                            <td><strong>Room</strong></td>
+                                            <td><strong>Time</strong></td>
+                                            <td><strong>BookerID</strong></td>
+                                            <td><strong>#</strong></td>
+                  </tr>
+                </thead>       
+
+                   
+                      <tr ng-repeat="book in Records_data">
+                       
+                        <td colspan="5">
+                          <table class="col-md-12">
+                            <tr ng-repeat="item in book.timesheet">
+                               
+                                <td>
+                                    <table class="table">
+
+
+                                       <tr ng-repeat="slot in item.timeSlots">
+
+                                           <td>{{book.date}}</td>
+                                           <td>{{item.roomNumber}}</td>
+                                           <td>{{slot_names[slot.timeSlot]}}</td>
+                                           <td>{{slot.studentId}}</td>
+                                           <td> <a  ng-click="cancelBooking(slot.studentId,book.date,item.roomNumber,slot.timeSlot)"><span>Cancel</span></a>  
+                                           </td>       
+                                        </tr>                                     
+                                    </table>
+                                </td>                                                          
+                            </tr>
+                          </table>
+                        </td>                 
+                      </tr>
+                  
+            </table>
+            </div>
+            </div>
+        </div>
+      </div>
+    </div> 
+  </div>
+
+
+
+   <div ng-show="tab === 2"  class="main">
+     <div class="panel panel-cascade panel-invoice">
+      <div class="panel-body">
+        <h3 class="page-header">Set the maxium number of booking per day!</h3>  
+         <form id="loginform" class="form-horizontal" role="form">
+
+          <div style="margin-bottom: 25px" class="input-group">
+
+            <label class="control-label" >Enter Maxium number:</label>
+
+            <input type="number" ng-model="maxNum" min="0" class="form-control" >
+
+          </div>   
+          <div tyle="margin-bottom: 25px" class="input-group">
+              <input type="button" value="Submit" class="btn btn-sm btn-primary" ng-click="setMaxNum(maxNum)">
+           
+          </div> 
+        </form>          
+       
+      </div>
+    </div> 
+  </div>
+
+
+</div>
+</div>
+
+</body>
+		      	
+
+
+<script>
+  var app = angular.module('myApp', ['ngTable']);
+  app.controller('StudentCtrl', function($scope,$http,$filter, ngTableParams) {
+
+   //var url='http://54.186.74.110:8080';
+
+     var url='http://localhost:8080';
+
+       var names=window.location.href.split('=');
+      $scope.sid=names[1];
+      
+
+  		$scope.rooms=[226,322,324,326,390,392,602,604,622,624,626,632,634,662,664,702,704,706,722,724,726,732,734,762,764,862,804,806,822,824,826,832,834,862,864];
+
+  		
+
+
+  		var month_names = [
+                            'January',
+                            'February',
+                            'March',
+                            'April',
+                            'May',
+                            'June',
+                            'July',
+                            'August',
+                            'September',
+                            'October',
+                            'November',
+                            'December'
+                        ];
+        var day_names = [
+                            'Sunday',
+                            'Monday',
+                            'Tuesday',
+                            'Wednesday',
+                            'Thursday',
+                            'Friday',
+                            'Saturday'
+                            
+                        ];
+
+         $scope.slot_names = [
+                            '8:00 AM - 9:00 AM',
+                            '9:00 AM - 10:00 AM',
+                            '10:00 AM - 11:00 AM',
+                            '11:00 AM - 12:00 PM',
+                            '12:00 PM - 1:00 PM',
+                            '1:00 PM - 2:00 PM',
+                            '2:00 AM - 3:00 PM',
+                            '3:00 AM - 4:00 PM',
+                            '4:00 AM - 5:00 PM',
+                            '5:00 AM - 6:00 PM'
+                            
+                        ];
+
+
+        $scope.setting=function(){
+
+          $http({
+              method: 'GET',
+              url: url+'/admin'
+
+          }).success(function(res) {
+           // alert(res);
+
+           $scope.maxNum=res;
+          }).error(function(res,status){
+              
+          }); 
+
+        }
+
+
+        $scope.setMaxNum=function(maxNum){
+
+          $http({
+              method: 'POST',
+              url: url+'/admin?maxNum='+maxNum,
+
+              withCredentials: true
+        
+              }).success(function (res,status) {
+                if(status=='200'){
+                  alert('Setting Success!');
+                }
+
+              }).error(function(res,status){
+
+                    //alert('err status:'+status);
+                    /*for(var propt in res){
+                      alert(propt + ': ' + res[propt]);
+                    }*/
+                   
+                    if(status=='404'){
+
+                        alert('No Records!');
+
+                    }
+
+              });
+        
+        };
+
+        $scope.viewTimeTable = function(){
+
+          showTable(formateDate($scope.s_date));
+
+
+        }
+
+        
+        $scope.check = function(room,slot_id){
+
+        	var r=false,s=false;
+
+        	//alert(room+': slot'+slot_id);
+
+        	var timesheet=$scope.roomTable.timesheet;
+
+        	
+
+        	for(x in timesheet){
+
+        		if(timesheet[x].roomNumber==room){
+        			r=true;
+
+              if(r==true){
+
+                var slots=timesheet[x].timeSlots;
+              //alert(slots);
+                for(y in slots){
+                  if(slots[y].timeSlot==slot_id){
+                    s=true;    
+                    return r&s;
+                    //alert('slots:'+slots[y].timeSlot+'=='+slot_id+'?'+s);
+                  }
+                }
+              }
+            }		
+        	}
+        	return r&&s;
+        };
+
+
+
+
+        $scope.reserve= function(room,slot_id){
+
+          if(confirm("Reserve "+room+"?")){
+
+           // alert('reserve'+formateDate($scope.s_date));
+
+            $http({
+              method: 'POST',
+              url: url+'/book?sid='+$scope.sid,
+
+              withCredentials: true,
+                         // data: {"type":$scope.header,"device":book}
+              data: {
+                  "date": formateDate($scope.s_date),
+                  "roomid": room,
+                  "slot": slot_id
+                  
+                }
+        
+              }).success(function (res,status) {
+                if(status=='203'){
+
+                        alert('Invalid Time: Time Passed!');
+
+                }else{
+                  showTable(formateDate($scope.s_date));
+                }
+
+              }).error(function(res,status){
+
+                   /* alert('err status:'+status);
+                    for(var propt in res){
+                      alert(propt + ': ' + res[propt]);
+                    }*/
+                   
+                    if(status=='406'){
+
+                        alert('You have reached the maxium number of bookings!');
+
+                    }
+
+              });
+         }
+        };
+
+         $scope.cancelBooking= function(sid,date,roomid,slot){
+
+          //alert(sid+' '+date+' '+roomid+' '+slot);
+
+          if(confirm("Cancel Booking?")){
+
+            $http({
+              method: 'DELETE',
+              url: url+'/book?sid='+sid,
+              withCredentials: true,
+              
+              data:{
+
+                  "date": date,
+                  "roomid": roomid,
+                  "slot": slot
+                  
+              },
+              headers: {"Content-Type": "application/json;charset=utf-8"}
+
+        
+              }).success(function(res) {
+                  //alert(res);
+                  bookingViews();
+
+              }).error(function(res,status){
+
+                   /* alert('err status:'+status);
+                    for(var propt in res){
+                      alert(propt + ': ' + res[propt]);
+                    }*/
+                    
+
+              });
+           }
+
+        };    
+
+  		$scope.s_date=new Date();
+  		$scope.date_show=day_names[$scope.s_date.getDay()]+', '+month_names[$scope.s_date.getMonth()]+' '+ $scope.s_date.getDate()+', '+$scope.s_date.getFullYear();
+
+
+      var formateDate=function(date){
+         // alert(date);
+          var d=date.getDate();
+          var m=date.getMonth()+1;
+          var y=date.getFullYear();
+          return '' + y + '-' + (m<=9 ? '0' + m : m) + '-' + (d <= 9 ? '0' + d : d);
+
+      }
+
+
+  		 var showTable=function(datetime){
+
+        //alert(datetime);
+  		 	 //alert($scope.s_date.toISOString().substring(0,10));
+
+  		 	 //alert('http://54.186.74.110:8080/timetable/'+datetime);
+  			//$http.get('http://54.186.74.110:8080/timetable/'+datetime).success(function(res) {
+  			$http({
+		          method: 'GET',
+		          url: url+'/timetable/'+datetime
+
+			}).success(function(res) {
+
+           // alert('result:'+res);
+
+
+            $scope.roomTable=res;
+        }).error(function(res,status){
+             $scope.roomTable={};
+        }); 
+
+  		};
+
+
+
+  		 showTable(formateDate($scope.s_date));
+
+
+  		
+
+  		$scope.changDate=function(){
+  			$scope.date_show=day_names[$scope.s_date.getDay()]+', '+month_names[$scope.s_date.getMonth()]+' '+ $scope.s_date.getDate()+', '+$scope.s_date.getFullYear();
+  			showTable(formateDate($scope.s_date));
+
+  		};
+
+
+  		
+  		var c_day=new Date();
+  		var m_day=new Date();
+  		$scope.today=formateDate(c_day);  
+  		var numOfDays=4;		
+  		m_day.setTime(c_day.getTime()+numOfDays*24 * 60 * 60 * 1000);
+  		$scope.max_day=formateDate(m_day);
+
+
+      var bookingViews=function(){
+
+         $http({
+              method: 'GET',
+              url: url+'/timetable'
+
+          }).success(function(res) {
+
+            //alert('timetable'+res);
+
+            $scope.Records_data=res;
+
+            for(var propt in res){
+                /*alert(propt + ': ' + res[propt].date);
+                for(var p in res[propt].timesheet){
+                alert(p + ': ' + res[propt].timesheet[p].roomNumber);*/
+                
+            }
+
+          }).error(function(res,status){
+             $scope.Records_data={};
+          }); 
+      };
+
+  		$scope.viewBookings=function(){
+  			$scope.Tab='bookings';
+
+          bookingViews();
+  		};
+
+
+
+  		$scope.logout=function(){
+        window.location.assign('login.html'); 
+
+        
+      /* $http({
+              method: 'post',
+              url: url+'/signout',
+              withCredentials: true
+          
+
+       }).success(function(res,status) {
+        alert('suc'+status);
+
+        window.location.assign('login.html'); 
+       }).error(function(res,status){
+
+          alert('fail'+status+','+res);
+          for(var propt in res){
+                      alert(propt + ': ' + res[propt]);
+          }
+
+        }); */
+    };
+    
+	   
+  });
+</script>
+
+
+<!-- Bootstrap core JavaScript
+  ================================================== -->
+<!-- Placed at the end of the document so the pages load faster -->
+<script src="/stylesheets/js/jquery.min.js"></script>
+<script src="/stylesheets/js/bootstrap.min.js"></script>
+<!-- Just to make our placeholder images work. Don't actually copy the next line! -->
+<script src="/stylesheets/js/holder.js"></script>
+<!-- IE10 viewport hack for Surface/desktop Windows 8 bug -->
+<script src="/stylesheets/js/ie10-viewport-bug-workaround.js"></script>
+
+</body>
+
+</html>
